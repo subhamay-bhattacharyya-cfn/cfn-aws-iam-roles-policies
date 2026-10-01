@@ -1,59 +1,59 @@
 AWSTemplateFormatVersion: '2010-09-09'
-
-Description: 'Nested CloudFormation template to create an S3 bucket with versioning and public access blocking'
+Description: CloudFormation template to create an IAM role with an inline policy
 
 Parameters:
-  ProjectName:
+  RoleName:
     Type: String
-    Description: "Project name to use as a bucket prefix"
-    MinLength: 1
-    MaxLength: 20
-    AllowedPattern: "^[a-z0-9-]+$"
-    ConstraintDescription: "Project name must be lowercase letters, numbers, and hyphens only"
+    Description: Name of the IAM role
+    Default: MyApplicationRole
 
-  BucketBaseName:
+  Environment:
     Type: String
-    Default: cfn-bucket
-    Description: Base name for the S3 bucket (account ID, environment, and region will be appended)
-
-  environment:
-    Type: String
-    Default: devl
-    Description: "Deployment environment for the S3 bucket"
-
-  CiSuffix:
-    Type: String
-    Default: ""
-    Description: "Optional CI prefix to append to the bucket name"
-
-Conditions:
-  HasCiSuffix: !Not [!Equals [!Ref CiSuffix, ""]]
+    Description: Environment name
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
 
 Resources:
-  S3Bucket:
-    Type: AWS::S3::Bucket
+  IAMRole:
+    Type: AWS::IAM::Role
     Properties:
-      BucketName: !If
-        - HasCiSuffix
-        - !Sub '${ProjectName}-${BucketBaseName}-${AWS::AccountId}-${environment}-${AWS::Region}-${CiSuffix}'
-        - !Sub '${ProjectName}-${BucketBaseName}-${AWS::AccountId}-${environment}-${AWS::Region}'
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+      RoleName: !Sub '${RoleName}-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: ApplicationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::my-bucket-${Environment}/*'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/application/*'
 
 Outputs:
-  S3BucketName:
-    Description: "Name of the S3 bucket"
-    Value: !Ref S3Bucket
+  RoleArn:
+    Description: ARN of the IAM role
+    Value: !GetAtt IAMRole.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-BucketName"
+      Name: !Sub '${AWS::StackName}-RoleArn'
 
-  S3BucketArn:
-    Description: "ARN of the S3 bucket"
-    Value: !GetAtt S3Bucket.Arn
+  RoleName:
+    Description: Name of the IAM role
+    Value: !Ref IAMRole
     Export:
-      Name: !Sub "${AWS::StackName}-BucketArn"
+      Name: !Sub '${AWS::StackName}-RoleName'

@@ -1,18 +1,7 @@
-[
-  {
-    "ParameterKey": "BucketBaseName",
-    "ParameterValue": "cfn-bucket"
-  },
-  {
-    "ParameterKey": "ProjectName",
-    "ParameterValue": "myproject"
-  },
-  {
-    "ParameterKey": "environment",
-    "ParameterValue": "devl"
-  },
-  {
-    "ParameterKey": "CiSuffix",
-    "ParameterValue": ""
-  }
-]
+{
+  "RoleName": "test-lambda-role",
+  "S3BucketArn": "arn:aws:s3:::myproject-cfn-bucket-123456789012-devl-us-east-1",
+  "ProjectName": "cfn-nested-stack",
+  "environment": "devl",
+  "CiSuffix": ""
+}
