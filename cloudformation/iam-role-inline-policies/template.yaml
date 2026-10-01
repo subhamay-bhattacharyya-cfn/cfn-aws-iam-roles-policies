@@ -12,6 +12,7 @@ Metadata:
           - RoleName
           - Environment
           - AssumeRolePrincipal
+          - CiSuffix
       - Label:
           default: "Data Pipeline Permissions"
         Parameters:
@@ -102,6 +103,11 @@ Parameters:
       - events.amazonaws.com
       - datapipeline.amazonaws.com
     Description: AWS service that can assume this role
+
+  CiSuffix:
+    Type: String
+    Default: ''
+    Description: Optional suffix for CI/CD deployments (e.g., for unique role identification in testing)
 
   # Data Pipeline Policies
   EnableS3Policy:
@@ -362,6 +368,8 @@ Parameters:
     Description: Cross-account IAM role ARN pattern (required if EnableCrossAccountAccess is true)
 
 Conditions:
+  HasCiSuffix: !Not [!Equals [!Ref CiSuffix, '']]
+
   # Data Pipeline
   CreateS3Policy: !Equals [!Ref EnableS3Policy, 'true']
   CreateS3WritePolicy: !Equals [!Ref EnableS3WritePolicy, 'true']
@@ -410,7 +418,10 @@ Resources:
           - Enables fine-grained policy control via enable/disable parameters
           - Provides environment-based naming and tagging for resource organization
     Properties:
-      RoleName: !Sub '${ProjectName}-${RoleName}-${Environment}-${AWS::Region}'
+      RoleName: !If
+        - HasCiSuffix
+        - !Sub '${ProjectName}-${RoleName}-${Environment}-${AWS::Region}-${CiSuffix}'
+        - !Sub '${ProjectName}-${RoleName}-${Environment}-${AWS::Region}'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
