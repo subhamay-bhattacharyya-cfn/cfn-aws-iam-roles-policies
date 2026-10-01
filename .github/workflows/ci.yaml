@@ -8,12 +8,12 @@ on:
       - feature/**
       - bug/**
     paths:
-      - 'templates/**'
+      - 'cloudformation/iam-role-inline-policies/**'
       - .github/workflows/ci.yaml
   pull_request:
     branches: [main]
     paths:
-      - 'templates/**'
+      - 'cloudformation/iam-role-inline-policies/**'
 
 permissions:
   actions: write
